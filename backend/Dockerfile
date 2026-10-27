@@ -21,9 +21,21 @@ ENV NODE_ENV=production \
     DB_PATH=/data/soporte.db
 WORKDIR /app
 
+# Parches de seguridad de Debian publicados despues de la imagen base
+# (Trivy los reporta como "fixed version" disponible).
+RUN apt-get update \
+ && apt-get upgrade -y --no-install-recommends \
+ && rm -rf /var/lib/apt/lists/*
+
 # Carpeta de la base SQLite, con dueno no privilegiado.
 # El volumen nombrado de Compose hereda estos permisos la primera vez.
 RUN mkdir /data && chown node:node /data
+
+# npm, npx y corepack solo hacen falta para instalar dependencias (etapa 1).
+# El contenedor arranca con "node" directo, asi que se eliminan de la imagen
+# final: traen sus propias dependencias (tar, sigstore...) con vulnerabilidades.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+           /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 
 COPY --from=deps --chown=node:node /app/node_modules ./node_modules
 COPY --chown=node:node package.json ./
