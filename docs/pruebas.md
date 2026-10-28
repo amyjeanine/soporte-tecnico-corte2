@@ -123,17 +123,15 @@ Las tres pruebas **se volvieron a correr con la versión final** (la que tiene l
 
 ### 4.2 Resultados
 
-| Prueba | Carga | Peticiones | Throughput | p95 crear | p95 cola | Errores | ¿Cumple el SLO? |
-|---|---|---|---|---|---|---|---|
-Versión final (con las pantallas del prototipo):
+Versión final (con las pantallas del prototipo). **Todas las cifras salen de los archivos de `perf/resultados/`**: p95 y errores de `<prueba>-resumen.json`, peticiones y throughput de `http_reqs`. El resumen de k6 al final de `<prueba>-consola.txt` muestra lo mismo.
 
 | Prueba | Carga | Peticiones | Throughput | p95 crear | p95 cola | Errores | ¿Cumple el SLO? |
 |---|---|---|---|---|---|---|---|
-| **Baseline** | 2 solicitudes/s + 5 consultas/s, 1 min | 790 | 13 req/s | **4,8 ms** | **3,8 ms** | **0 %** | ✅ |
-| **Pico** (inicio de clases) | 2→30 solicitudes/s en 15 s, 1 min sostenido; 20 consultas/s | 4.627 | 51 req/s | **8,9 ms** | **8,3 ms** | **0 %** | ✅ |
+| **Baseline** | 2 solicitudes/s + 5 consultas/s, 1 min | 790 | 13 req/s | **7,5 ms** | **5,6 ms** | **0 %** | ✅ |
+| **Pico** (inicio de clases) | 2→30 solicitudes/s en 15 s, 1 min sostenido; 20 consultas/s | 4.628 | 50 req/s | **21,8 ms** | **18,6 ms** | **0 %** | ✅ |
 | **Estrés** | 10→300 solicitudes/s en 2 min; 50 consultas/s | 14.854 | 108 req/s | 10.912 ms | 34.740 ms | 2,71 % | ❌ (esperado: busca el quiebre) |
 
-Historia del estrés (misma prueba, versiones distintas del código):
+Historia del estrés (misma prueba, versiones distintas del código). El **quiebre** es la ventana de 10 s con más solicitudes/s atendidas en `<archivo>-ventanas.md`; a partir de ahí el throughput cae y el p95 supera el SLO. Los errores son `http_req_failed` del `-resumen.json`:
 
 | Versión | Qué cambió | Quiebre | Errores | Archivos |
 |---|---|---|---|---|
@@ -142,9 +140,9 @@ Historia del estrés (misma prueba, versiones distintas del código):
 | v3 | pantallas del prototipo, **primera versión** | **≈97 sol/s** ↓ | **6,94 %** | `estres-v3-constructor-lento-*` |
 | **final** | v3 con el constructor de `Solicitud` corregido (§4.5) | **≈140 sol/s** | **2,71 %** | `estres-*` |
 
-**Segunda medición en un portátil con Windows** (26/09/2026, con VS Code y Expo abiertos al tiempo): baseline p95 crear 156 ms / cola 25 ms, pico p95 crear 58 ms / cola 50 ms, **0 % errores en ambas**. Más lentos que en la máquina de desarrollo, pero igual muy por debajo del SLO. Capturas en [evidencias/windows](evidencias/windows).
+**Segunda medición en un portátil con Windows** (26/09/2026, con VS Code y Expo abiertos al tiempo): baseline p95 crear 156 ms / cola 25 ms, pico p95 crear 58 ms / cola 50 ms, **0 % errores en ambas**. Más lentos que en la máquina de desarrollo, pero igual muy por debajo del SLO. De esa corrida solo se guardaron las capturas de la consola de k6 ([04-k6-baseline.png](evidencias/windows/04-k6-baseline.png), [05-k6-pico.png](evidencias/windows/05-k6-pico.png)); las cifras se leen ahí. La próxima vez se puede guardar también el JSON con `k6 run --summary-export perf/resultados/windows-pico-resumen.json perf/scripts/pico.js`.
 
-El pico ya es muy exagerado a propósito: 30 solicitudes por segundo durante un minuto son unas 2.300 solicitudes, más que la cantidad de salones de una sede. **Con la carga realista, el sistema va sobrado.** El p95 del pico (9 ms) es más de 50 veces menor que el SLO.
+El pico ya es muy exagerado a propósito: 30 solicitudes por segundo durante un minuto son unas 2.300 solicitudes, más que la cantidad de salones de una sede. **Con la carga realista, el sistema va sobrado.** El p95 del pico al crear (21,8 ms) es unas 23 veces menor que el SLO de 500 ms.
 
 En el estrés, k6 no alcanzó a lanzar todas las iteraciones programadas (`dropped_iterations`) porque el servidor ya no respondía a tiempo. Eso también es un síntoma de saturación.
 
@@ -186,7 +184,7 @@ En el estrés, k6 no alcanzó a lanzar todas las iteraciones programadas (`dropp
 
 1. Casi ninguna solicitud se resuelve durante la prueba (hay 4 técnicos), así que la cola crece sin parar: miles de pendientes.
 2. Cada `GET /cola` lee **todas** las pendientes de la sede desde SQLite, crea un objeto por fila, arma el montículo de prioridades y, en v1, serializaba **toda** la cola a JSON: megabytes por petición, 2,4 GB en total. El panel admin (20 % de las consultas) además lee todas las solicitudes del día.
-3. Mientras el hilo hace eso, las peticiones de crear solicitud esperan en fila. Por eso sube **también** el p95 de crear, aunque crear en sí es barato (≈3 ms en baseline).
+3. Mientras el hilo hace eso, las peticiones de crear solicitud esperan en fila. Por eso sube **también** el p95 de crear, aunque crear en sí es barato (mediana de 4,2 ms en el baseline, `baseline-resumen.json`).
 4. Pasado el punto de quiebre, el throughput **baja** en vez de mantenerse (v2: de 140/s a 88/s y luego 52/s). El servidor gasta cada vez más tiempo en consultas cada vez más caras hasta que aparecen los timeouts de 60 s.
 
 **Qué hicimos (ADR-004):** paginar la cola a 50 elementos. El resultado medido: datos de 2,4 GB → **66 MB**, quiebre de ≈108 → **≈140 solicitudes/s** (de ≈2.600 a ≈4.000 solicitudes acumuladas). **No bastó para eliminar los timeouts** (4,5 % → 3,6 % de errores; 2,7 % en la versión final): el trabajo O(n) por consulta sigue ahí.
@@ -206,21 +204,22 @@ En el estrés, k6 no alcanzó a lanzar todas las iteraciones programadas (`dropp
 
 Al conectar las pantallas del prototipo volvimos a correr las tres pruebas. Baseline y pico seguían cumpliendo el SLO de sobra, pero el **estrés empeoró**: el quiebre bajó de ≈140 a **≈97 solicitudes/s** y los errores subieron de 3,6 % a **6,9 %** (`estres-v3-constructor-lento-*`).
 
-Para encontrar la causa medimos por separado cada paso de la consulta de la cola con 4.000 solicitudes abiertas:
+Para encontrar la causa medimos por separado cada paso de la consulta de la cola con 4.000 solicitudes abiertas. Esa primera medición la hicimos a mano y no quedó guardada, así que la convertimos en un script versionado: `npm run medir:cola` (en `backend/`, archivo `scripts/medirCola.js`). El script reproduce el constructor genérico de la versión lenta y guarda el resultado en [`perf/resultados/micro-cola.txt`](../perf/resultados/micro-cola.txt). Las cifras de esta sección salen de ese archivo (mediana de 15 repeticiones):
 
 | Paso | Tiempo |
 |---|---|
-| Solo el `SELECT` en SQLite | 8,6 ms |
+| Solo el `SELECT` en SQLite | 9,6 ms |
 | `SELECT` + leer el JSON de `datos` | 9,4 ms |
-| `listarAbiertas` completo (crea una entidad `Solicitud` por fila) | **42,7 ms** |
+| `listarAbiertas` completo con el constructor actual (campo por campo) | 18,9 ms |
+| Lo mismo con el constructor genérico de la versión v3 | **29,8 ms** |
 
-El culpable no era la base de datos ni el JSON nuevo, sino **el constructor de `Solicitud`**. Al agregarle los campos del prototipo lo habíamos escrito de forma genérica (copiar un objeto de valores por defecto y filtrar los `undefined`) para que el escaneo no marcara complejidad alta. En un microbenchmark, crear 4.000 entidades así tomaba ≈17 ms contra ≈0,2 ms asignando campo por campo (**unas 80 veces más lento**), y eso se ejecuta en cada consulta de la cola.
+El culpable no era la base de datos ni el JSON nuevo, sino **el constructor de `Solicitud`**. Al agregarle los campos del prototipo lo habíamos escrito de forma genérica (copiar un objeto de valores por defecto y filtrar los `undefined`) para que el escaneo no marcara complejidad alta. Crear 4.000 entidades así toma 11,8 ms, contra 0,4 ms asignando campo por campo (**unas 30 veces más lento**), y eso se ejecuta en cada consulta de la cola.
 
-Lo reescribimos campo por campo (la excepción a la regla de complejidad quedó justificada en el código). `listarAbiertas` bajó a 17 ms y el estrés volvió a quebrar en **≈140 solicitudes/s**, con menos errores que antes (2,7 %) aunque ahora cada evento guarda además un aviso para el docente (ADR-005).
+Lo reescribimos campo por campo (la excepción a la regla de complejidad quedó justificada en el código). `listarAbiertas` bajó de 29,8 a 18,9 ms y el estrés volvió a quebrar en **≈140 solicitudes/s**, con menos errores que antes (2,7 %) aunque ahora cada evento guarda además un aviso para el docente (ADR-005).
 
 **Lección:** una regla de estilo (complejidad ≤ 10) nos empujó a una versión más lenta, y solo la prueba de carga lo mostró; las 253 pruebas funcionales de ese momento pasaban igual. Por eso la dejamos en el plan: se corre de nuevo después de cada cambio grande.
 
-**Conclusión:** para el volumen real de la universidad (decenas de solicitudes por minuto en el peor momento, no cientos por segundo) el sistema cumple el SLO con un margen de más de 100×. El límite aparece entre 100 y 140 solicitudes/s con miles de solicitudes en cola. Lo impone el diseño de "recalcular la cola en cada consulta" dentro de un proceso único, y queda documentado como límite conocido para el Corte 3.
+**Conclusión:** para el volumen real de la universidad (decenas de solicitudes por minuto en el peor momento, no cientos por segundo) el sistema cumple el SLO con margen: en el pico, que ya es exagerado, el p95 al crear (21,8 ms) queda unas 23 veces por debajo del límite. El límite aparece entre 100 y 140 solicitudes/s con miles de solicitudes en cola. Lo impone el diseño de "recalcular la cola en cada consulta" dentro de un proceso único, y queda documentado como límite conocido para el Corte 3.
 
 ## 5. Pruebas de punta a punta en la app (Playwright) y evaluación de UX
 

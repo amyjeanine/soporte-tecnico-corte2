@@ -20,7 +20,7 @@ class Solicitud {
    *
    * Asignación campo por campo a propósito: se crea una entidad por fila en cada consulta de la cola,
    * así que este constructor está en el camino caliente de la prueba de carga. Una versión genérica
-   * (copiar valores por defecto y filtrar los undefined) era unas 80 veces más lenta y bajó el punto de quiebre (docs/pruebas.md §4.5).
+   * (copiar valores por defecto y filtrar los undefined) era unas 30 veces más lenta y bajó el punto de quiebre (docs/pruebas.md §4.5, perf/resultados/micro-cola.txt).
    */
   // eslint-disable-next-line complexity -- cada `??` cuenta como rama, pero aquí solo se copian valores por defecto
   constructor(c) {

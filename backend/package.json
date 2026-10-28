@@ -15,7 +15,8 @@
     "escaneo": "eslint . && node scripts/reporteEscaneo.js",
     "test:reporte": "node --disable-warning=ExperimentalWarning node_modules/jest/bin/jest.js --config jest.reporte.config.js --coverage",
     "evidencia": "node scripts/generarEvidencia.js",
-    "retos": "node scripts/retos.js"
+    "retos": "node scripts/retos.js",
+    "medir:cola": "node --disable-warning=ExperimentalWarning scripts/medirCola.js"
   },
   "author": "",
   "license": "MIT",

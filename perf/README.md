@@ -55,12 +55,12 @@ Capturas: [baseline](../docs/evidencias/windows/04-k6-baseline.png) · [pico](..
 
 Resumen y análisis del cuello de botella en **[docs/pruebas.md §4](../docs/pruebas.md#4-pruebas-de-carga)**.
 
-Versión final (con las pantallas del prototipo AsisTec):
+Versión final (con las pantallas del prototipo AsisTec). Cada cifra sale de `resultados/<prueba>-resumen.json` (`metrics → http_req_duration{nombre:crear_solicitud|consultar_cola} → p(95)` y `http_req_failed → value`); lo mismo se ve al final de `resultados/<prueba>-consola.txt`:
 
 | Prueba | p95 crear | p95 cola | Errores | SLO |
 |---|---|---|---|---|
-| Baseline | 4,8 ms | 3,8 ms | 0 % | ✅ |
-| Pico | 8,9 ms | 8,3 ms | 0 % | ✅ |
+| Baseline | 7,5 ms | 5,6 ms | 0 % | ✅ |
+| Pico | 21,8 ms | 18,6 ms | 0 % | ✅ |
 | Estrés | 10.912 ms | 34.740 ms | 2,71 % | ❌ quiebre ≈140 sol/s |
 
 Resultados anteriores que se conservan para comparar:
@@ -71,4 +71,6 @@ Resultados anteriores que se conservan para comparar:
 | `estres-v2-antes-prototipo-*` | cola paginada, antes de las pantallas del prototipo | ≈140 sol/s | 3,64 % |
 | `estres-v3-constructor-lento-*` | primera versión con el prototipo (regresión, ver docs/pruebas.md §4.5) | ≈97 sol/s | 6,94 % |
 
-`correr.sh` sobrescribe `baseline-*`, `pico-*` y `estres-*` cada vez que se corre.
+`micro-cola.txt` es la medición paso a paso de la consulta de la cola que explica la regresión v3 (docs/pruebas.md §4.5). Se regenera con `npm run medir:cola` desde `backend/`.
+
+`correr.sh` sobrescribe `baseline-*`, `pico-*` y `estres-*` cada vez que se corre. **Si se vuelve a correr, hay que actualizar las cifras de este README, de `docs/pruebas.md` y del README principal con lo que quede en los archivos nuevos.**

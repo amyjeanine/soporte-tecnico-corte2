@@ -16,7 +16,7 @@ En el Corte 1 construimos solo el módulo de asignación, en Java, sin interfaz,
 | Enfoque administrativo | Roles y consultas agregadas |
 | Pantalla del trabajador | Otra interfaz sobre las mismas reglas del técnico (State del Corte 1) |
 | Pruebas | Poder probar las reglas de negocio sin base de datos ni red |
-| Todo en JS / Expo (restricción del equipo) | Backend en Node.js y app en Expo |
+| Pasar el Corte 1 a JS / Expo ([ADR-007](ADR-007-migracion-java-a-node.md)) | Backend en Node.js y app en Expo, conservando las clases y patrones del Corte 1 |
 
 La lógica del Corte 1 (State, Chain of Responsibility, Decorator) funciona y queremos conservarla. El riesgo es que, al agregar Express, Socket.IO, SQLite y la app, esas reglas terminen mezcladas con código de infraestructura y dejen de poder probarse aisladas.
 

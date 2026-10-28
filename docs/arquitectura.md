@@ -20,7 +20,7 @@ En la Universidad de La Sabana cada salón tiene un teléfono para pedir soporte
 
 Lo que el Corte 1 dejó pendiente, dicho por nosotros mismos: no había interfaz, persistencia, roles ni panel del coordinador, y nada disparaba la escalación con el paso del tiempo.
 
-**Qué entrega el Corte 2:** el sistema completo en JavaScript. Un backend Node.js con arquitectura hexagonal y una app Expo construida sobre nuestro prototipo de Figma **AsisTec** (18 pantallas: docente, técnico y coordinador), comunicados por HTTP y WebSocket, con datos persistentes en SQLite. La sección 4.7 muestra qué hay detrás de cada pantalla del prototipo.
+**Qué entrega el Corte 2:** el mismo diseño del Corte 1, llevado a JavaScript clase por clase y ampliado para los retos. Por qué cambiamos de lenguaje, qué alternativas había y qué nos costó está en el [ADR-007](adr/ADR-007-migracion-java-a-node.md), junto con la tabla que muestra a qué reto responde cada pieza del Corte 1. Un backend Node.js con arquitectura hexagonal y una app Expo construida sobre nuestro prototipo de Figma **AsisTec** (18 pantallas: docente, técnico y coordinador), comunicados por HTTP y WebSocket, con datos persistentes en SQLite. La sección 4.7 muestra qué hay detrás de cada pantalla del prototipo.
 
 ## 2. Retos asignados y trazabilidad
 
@@ -54,6 +54,7 @@ Otras decisiones registradas:
 - [ADR-004](adr/ADR-004-limite-en-consulta-de-cola.md): paginar la cola, tomada a partir de la prueba de estrés
 - [ADR-005](adr/ADR-005-notificaciones-decorator.md): notificaciones del docente como Decorator del puerto de eventos
 - [ADR-006](adr/ADR-006-solicitudes-agendadas.md): solicitudes agendadas (estado PROGRAMADA) que entran solas a la cola
+- [ADR-007](adr/ADR-007-migracion-java-a-node.md): pasar el módulo del Corte 1 de Java a Node conservando su diseño, con lo que costó y la trazabilidad clase por clase
 
 **Qué mejora y qué sacrifica el estilo:** mejora la testabilidad, la modificabilidad (cambiar el canal de notificación o la BD sin tocar reglas) y la consistencia. Sacrifica simplicidad (más archivos e indirección) y no da escalabilidad horizontal inmediata.
 
@@ -270,7 +271,7 @@ Detalle y resultados en **[pruebas.md](pruebas.md)**. En resumen:
 - **278 pruebas de Jest, todas pasan** (208 unitarias + 70 de integración y sistema), y **7 de 7 de punta a punta en el navegador**. `npm run retos` muestra la lista de chequeo por reto. La prueba de cada reto, con código y salida, está en [evidencias/evidencia-por-reto.md](evidencias/evidencia-por-reto.md).
 - **Escaneo de código** (`npm run escaneo`): 0 hallazgos de ESLint, seguridad ni arquitectura. En el primer escaneo aparecieron 29, dos de ellos defectos reales que se corrigieron con prueba. Ver [evidencias/escaneo-codigo.md](evidencias/escaneo-codigo.md).
 - **Cobertura del núcleo** (dominio + aplicación) con solo las unitarias: **98,6 % de líneas y 91,2 % de ramas**. El umbral configurado es 85 % de líneas y 75 % de ramas, y `npm run test:coverage` falla si baja de ahí.
-- **Carga (versión final):** el SLO (p95 crear ≤ 500 ms, p95 cola ≤ 300 ms, errores < 1 %) se cumple con holgura en el baseline (p95 ≤ 4,8 ms) y en el pico de inicio de clases (p95 ≤ 8,9 ms a 30 solicitudes/s, 0 % de errores). En estrés, el sistema se quiebra alrededor de 140 solicitudes/s. Al conectar el prototipo, esa prueba detectó una regresión (quiebre a ≈97 sol/s) causada por el constructor de `Solicitud`; se corrigió y se volvió a medir. Análisis en [pruebas.md §4](pruebas.md#4-pruebas-de-carga).
+- **Carga (versión final):** el SLO (p95 crear ≤ 500 ms, p95 cola ≤ 300 ms, errores < 1 %) se cumple con holgura en el baseline (p95 crear 7,5 ms, cola 5,6 ms) y en el pico de inicio de clases (p95 crear 21,8 ms, cola 18,6 ms a 30 solicitudes/s, 0 % de errores). Las cifras salen de `perf/resultados/*-resumen.json`. En estrés, el sistema se quiebra alrededor de 140 solicitudes/s. Al conectar el prototipo, esa prueba detectó una regresión (quiebre a ≈97 sol/s) causada por el constructor de `Solicitud`; se corrigió y se volvió a medir. Análisis en [pruebas.md §4](pruebas.md#4-pruebas-de-carga).
 
 ## 7. Límites conocidos del diseño y trabajo pendiente para el Corte 3
 

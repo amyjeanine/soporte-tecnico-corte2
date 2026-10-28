@@ -20,10 +20,12 @@ La consulta devuelve `{ total, items }`, donde `items` son solo las primeras `li
 
 ## Consecuencias (medidas con la misma prueba de estrés, ver [pruebas.md](../pruebas.md) §4)
 
+Fuentes: `perf/resultados/estres-v1-sin-limite-*` (antes) y `perf/resultados/estres-v2-antes-prototipo-*` (después): `data_received`, `http_reqs` y `http_req_failed` del `-resumen.json`, y las ventanas de 10 s del `-ventanas.md`.
+
 | Métrica | Antes (v1) | Después (v2) | Cambio |
 |---|---|---|---|
 | Datos transferidos | 2,4 GB | **66 MB** | −97 % |
-| Punto de quiebre (primera ventana con p95 > SLO) | ≈108 sol/s, ≈2.600 acumuladas | **≈140 sol/s, ≈4.000 acumuladas** | +30 % de tasa, +55 % de volumen |
+| Punto de quiebre (ventana de 10 s con más solicitudes/s; en la siguiente el p95 ya pasa el SLO) | ≈108 sol/s, ≈2.600 acumuladas | **≈140 sol/s, ≈4.000 acumuladas** | +30 % de tasa, +55 % de volumen |
 | Peticiones completadas | 12.691 | **14.119** | +11 % |
 | Tasa de error total | 4,50 % | 3,64 % | Mejora poco |
 

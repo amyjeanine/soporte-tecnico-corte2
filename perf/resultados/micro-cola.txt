@@ -1,0 +1,11 @@
+Microbenchmark de la consulta de la cola · 2026-10-28T00:52:15.054Z
+Node v22.23.4 · Intel(R) Xeon(R) Processor @ 2.10GHz · 4000 solicitudes abiertas · mediana de 15 repeticiones
+
+Solo el SELECT en SQLite ............................ 9.6 ms
+SELECT + leer el JSON de "datos" .................... 9.4 ms
+listarAbiertas completo (crea una Solicitud por fila)  18.9 ms
+Lo mismo con el constructor genérico (versión v3) .... 29.8 ms
+
+Crear 4000 entidades, constructor actual (campo a campo) .. 0.4 ms
+Crear 4000 entidades, constructor genérico (versión v3) ... 11.8 ms
+El genérico es 33 veces más lento
